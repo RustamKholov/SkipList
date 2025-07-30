@@ -4,14 +4,32 @@ using SkipList.Node;
 
 namespace SkipList.SkipList;
 
-public class SkipList<T>(int maxLevel = 16) : IEnumerable<T>, ISkipList<T> where T : IComparable<T>
+public class SkipList<T>(int maxLevel = 16) : IEnumerable<T>, ICollection<T> where T : IComparable<T>
 {
     private readonly SkipListNode<T> _header = new(default!, maxLevel);
-    private readonly SkipListNode<T> _end = new(default!, maxLevel);
     private readonly int _maxLevel = maxLevel;
     private readonly Random _random = new();
 
-    public void Delete(T value)
+    public int Count { get; private set; }
+
+    public bool IsReadOnly => false;
+
+    public void Add(T item)
+    {
+        Insert(item);
+    }
+
+    public bool Remove(T item)
+    {
+        return Delete(item);
+    }
+
+    public bool Contains(T item)
+    {
+        return Search(item) is not null;
+    }
+
+    public bool Delete(T value)
     {
         var current = _header;
         SkipListNode<T>[] update = new SkipListNode<T>[_maxLevel + 1];
@@ -33,12 +51,23 @@ public class SkipList<T>(int maxLevel = 16) : IEnumerable<T>, ISkipList<T> where
             {
                 update[i].Forward[i] = current.Forward[i];
             }
+            Count--;
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 
     public IEnumerator<T> GetEnumerator()
     {
-        throw new NotImplementedException();
+        var current = _header;
+        while (current.Forward[0] != null)
+        {
+            current = current.Forward[0];
+            yield return current.Value;
+        }
     }
 
     public void Insert(T value)
@@ -54,6 +83,7 @@ public class SkipList<T>(int maxLevel = 16) : IEnumerable<T>, ISkipList<T> where
             update[i] = current;
         }
         current = current.Forward[0];
+        Count++;
         if (current == null || current.Value.CompareTo(value) != 0)
         {
             int level = MakeRandomLevel();
@@ -64,6 +94,7 @@ public class SkipList<T>(int maxLevel = 16) : IEnumerable<T>, ISkipList<T> where
                 update[i].Forward[i] = newNode;
             }
         }
+
     }
 
     public SkipListNode<T>? Search(T value)
@@ -103,5 +134,27 @@ public class SkipList<T>(int maxLevel = 16) : IEnumerable<T>, ISkipList<T> where
             level++;
         }
         return level;
+    }
+
+    public void CopyTo(T[] array, int arrayIndex)
+    {
+        if (array != null)
+        {
+            if (arrayIndex < 0 || arrayIndex >= array.Length) throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+            if (array.Length - arrayIndex < Count) throw new ArgumentException("The number of elements in the source collection is greater than the available space from arrayIndex to the end of the destination array.");
+
+            int index = arrayIndex;
+            foreach (var item in this)
+            {
+                array[index++] = item;
+            }
+        }
+        else
+            throw new ArgumentNullException(nameof(array));
+    }
+    public void Clear()
+    {
+        _header.Forward = new(_maxLevel + 1);
+        Count = 0;
     }
 }

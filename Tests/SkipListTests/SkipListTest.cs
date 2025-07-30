@@ -86,6 +86,25 @@ public class SkipListTest
         // Then
         Assert.Null(skipList.Search(10));
     }
+    [Fact]
+    public void TestInsertAndDeleteShoudReturnNullThroughSearch()
+    {
+
+        // Given
+        SkipList<int> skipList = [];
+        skipList.Insert(10);
+        skipList.Insert(20);
+        skipList.Insert(30);
+
+        // When
+        skipList.Delete(20);
+        var deletedValue = skipList.Search(20);
+        
+        // Then
+        Assert.Null(deletedValue);
+        Assert.NotNull(skipList.Search(10));
+        Assert.NotNull(skipList.Search(30));
+    }
 
 
     [Fact]
